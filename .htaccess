@@ -1,0 +1,6 @@
+# For security reasons, Option followsymlinks cannot be overridden.
+#Options +FollowSymLinks
+RewriteEngine on
+RewriteCond %{HTTP_HOST} ^basicwebdevelopment\.com$ [NC]
+RewriteRule ^(.*)$ http://www.basicwebdevelopment.com/$1 [R=301,L]
+RewriteRule !\.(js|ico|gif|jpg|png|css|txt|randomcss)$ index.php
