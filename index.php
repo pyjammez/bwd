@@ -87,11 +87,10 @@
 		// Get the categories for the menu.
 		$menu_result = $pageModel->getCategories($controller);
 
-		// If not content for this controller yet
+		// If no content for this controller yet
 		if (!$menu_result)
 		{
 			$pages['about'][] = ['url' => 'about', 'menu' => 'No pages yet'];
-		
 		}
 		
 		foreach($menu_result as $key => $value)
@@ -120,8 +119,7 @@
 		else
 		{
 			$title = "No content yet";
-			$meta_keywords = $meta_description = "";	
-			$view = $pageModel->defaultView;			
+			$meta_keywords = $meta_description = "";
 		}
 		
 		// All of them use layout/default
