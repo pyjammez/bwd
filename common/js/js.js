@@ -26,7 +26,7 @@ function display_menu(){
 	var cancelMenu = function(event){
 		if($(event.target).is("#main_nav_chosen, #main_nav *")) return;
 		$(document).off('click', cancelMenu);
-		$('#main_nav').hide();
+		$('#main_nav').css('display', '');
 	}
 	$(document).on('click', cancelMenu);
 	$('#main_nav').toggle();

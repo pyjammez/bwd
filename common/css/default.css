@@ -32,6 +32,7 @@ table td {vertical-align:top;border-spacing:0;}
 	.mini {display:none;}
 	.maxi {display:block;}
 	.content {padding:10px 20px;}
+	#main_nav {display:block;}
 	#main_nav_chosen {display:none;}
 	#section_nav_menu {display:none;}
 	
