@@ -6,20 +6,17 @@ function saveForm(e) {
 document.onkeydown = saveForm;
 
 function display_section_menu(){
-
 	$('#section_nav_menu').toggle();
     $( "#accordion" ).accordion({
       heightStyle: "fill",
-	  active: active_section
+	  active: active_section //  set in footer
     });
  
     $( "#accordion-resizer" ).resizable({
-
       resize: function() {
-        $( "#accordion" ).accordion( "refresh" );
-      }
+		  $( "#accordion" ).accordion( "refresh" );
+	  }
     });
-
 }
 
 function display_menu(){

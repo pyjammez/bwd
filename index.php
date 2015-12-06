@@ -1,155 +1,142 @@
 <?php
 
-	include "framework/index.php";
-	include SCRIPTS."functions/functions.php";
+	// Start Session
+	session_start();
+		
+	// Include common helper functions
+	include "helpers/functions.php";
 	
+	// Setup debugging
 	showErrors('all');
 	showMemoryUsage('all');
 	
-	// Parse URI
-	list($nothing, $controller, $category, $page) = $uri_controls;
-
-	// If no controller, check if cookie exists, and if not, default to /welcome
-	if(!$controller)
-	{
-		if(isset($_COOKIE['controller'])) $controller = $_COOKIE['controller'];
-		else $controller = "welcome";
-	}
+	// Set Paths
+	set_include_path(
+		get_include_path()
+		.PATH_SEPARATOR.'models'
+		.PATH_SEPARATOR.'helpers'
+	);
 	
-	// Admin mode
+	// Override path autoloader
+	function __autoload($class){@include_once $class.'.php';}
+	
+	// Define useful constants
+	$root = $_SERVER['DOCUMENT_ROOT']; // includes a forward slash at the end on my server, but apparently not on bluehost.
+	if ($root[strlen($root)-1] != "/") $root .= "/";
+	define('ROOT', $root );
+	define('VIEWS', ROOT.'views/');
+	define('HELPERS', ROOT.'helpers/');
+	define('CONTROLLERS', ROOT.'controllers/');
+	define('MODELS', ROOT.'models/');
+	define('COMMON', ROOT.'common/');
+	define('NOW', strtotime('now'));
+	define('URI', $_SERVER['REQUEST_URI']);
+
+	// Parse URI to get the paths
+	$uri_controls = array_fill(0,8, '');
+	$uri_criteria = "";
+	$uri_parts = explode('?', $_SERVER['REQUEST_URI']);
+	if(isset($uri_parts[1])) 
+	{
+		$uri_criteria = "/?".$uri_parts[1]; 
+		$uri_query = parse_str($uri_parts[1]);
+	}
+	$uri_controls = explode('/', $uri_parts[0]) + $uri_controls;
+	
+	list($nothing, $controller, $category, $page) = $uri_controls;
+	
+	if(!$category)   $category = "about";
+	if(!$controller) $controller = (isset($_COOKIE['controller'])) ? $_COOKIE['controller'] : "welcome";
+	
+	// Check for admin mode
 	if(isset($_GET['admin']))
 	{
 		if(isset($_SESSION['admin'])) $_SESSION['admin'] = $_GET['admin'];
-		
-		if($_GET['admin'] == "password123")
-		{
-			$_SESSION['admin'] = "edit";
-		}
-		if($_GET['admin'] == "logout")
-		{
-			unset($_SESSION['admin']);
-		}
+		if($_GET['admin'] == "password123") $_SESSION['admin'] = "edit";
+		if($_GET['admin'] == "logout") unset($_SESSION['admin']);
 	}
 	
-	// POST content
+	$pageModel = new Page;
+	
+	// Get POST content
 	if(isset($_POST['controller']))
 	{
-
-		$form_data = [
-			'structure' => [
-				["auto","autoid"],
-				["input","controller"],
-				["input","category"],
-				["input","url"],
-				["input","menu"],
-				["input","title"],
-				["input","meta_description"],
-				["input","meta_keywords"],
-				["textarea","content"],
-				["input","created"],
-				["input","modified"]
-			],
-			'data' => [
-				"autoid"=>"",
-				"controller"=>$_POST['controller'],
-				"category"=>$_POST['category'],
-				"url"=>$_POST['url'],
-				"menu"=>$_POST['menu'],
-				"title"=>$_POST['title'],
-				"meta_description"=>$_POST['meta_description'],
-				"meta_keywords"=>$_POST['meta_keywords'],
-				"content"=>$_POST['content'],
-				"created"=>date('Y-m-d H:i:s',NOW),
-				"modified"=>date('Y-m-d H:i:s',NOW)
-			],
-		];
-		
-		if(!empty($_POST['autoid']))
-		{ 
-			// Update page by removing the ID and created date value.
-			unset($form_data['data']['autoid']);
-			unset($form_data['data']['created']);
-			unset($form_data['structure'][0]);
-			unset($form_data['structure'][9]);
-			dbu($_POST['autoid'], "pages", $form_data);
-		}
-		else
-		{
-			// Insert page.
-			dbi("pages",$form_data);
-		}
+		$pageModel->fillFromFormSubmit($_POST);
+		$pageModel->save();
 		$_SESSION['admin'] = "view";
-
 	}
 	
+	// Query the controllers for the header menu
+	$controllers = $pageModel->getControllers();
 	
+	// Prepare output
+	$edit_autoid = $edit_menu = $title = $meta_description = $meta_keywords = $edit_content = $edit_created = $edit_modified = "";
+  	$categories = [];
 	
-	// Query the controllers
-	$controllers = dbq("SELECT DISTINCT controller FROM pages");
-	
-	// Nicer looking names for the controllers
-	$controller_array = [
-		'welcome' => 'Welcome',
-		'html' => 'HTML',
-		'css' => 'CSS',
-		'javascript' => 'JavaScript',
-		'php' => 'PHP',
-		'mysql' => 'MySQL',
-		'node' => 'Node',
-		'angular' => 'Angular',
-		'backbone' => 'Backbone',
-		'mongo' => 'MongoDb',
-		'regexp' => 'RegExp'
-	];
-	
-	// Query pages
-	if(!$category) $category = "about";
-	if($controller == "welcome")$menu_result = array();
-	else $menu_result = dbq("SELECT category, url, menu FROM pages WHERE controller = '$controller'");
+	if($controller == "welcome") 
+	{
+		$pages['about'][] = ['url' => 'about', 'menu' => 'No pages yet'];
+			
+		$title = $pageModel->defaultTitle;
+		$meta_keywords = $pageModel->defaultMetaKeywords;
+		$meta_description = $pageModel->defaultMetaDescription;		
+		$view = $pageModel->defaultView;
+	} 
+	else
+	{
+		// Get the categories for the menu.
+		$menu_result = $pageModel->getCategories($controller);
 
-	// Get distinct categories
-	$categories = [];
-	if(!$menu_result)$pages['about'][] = ['url' => 'asdf', 'menu' => 'No pages yet'];
-	foreach($menu_result as $key => $value)
-	{
-		$pages[$value['category']][] = ['url' => $value['url'], 'menu' => htmlentities($value['menu'])];
-		$categories[$value['category']] = $value['category'];
-	}
-
-	// Page layout. 
-	if($controller == "welcome")
-	{
-		$title = "Welcome";
-		$meta_keywords = "basic, web, development, programming, code, html, css, javascript";
-		$meta_description = "Basic Web Development";
-		$layout = "welcome";
-	}
-	else 
-	{
-		// Query content
-		if(!$page) $page = $pages[$category][0]['url'];
-		$result = dbq("SELECT * from pages WHERE controller = '$controller' AND category = '$category' AND url = '$page'");
-		if($result)
+		// If not content for this controller yet
+		if (!$menu_result)
 		{
-			$edit_autoid = $result[0]['autoid'];
-			$edit_menu = $result[0]['menu'];
-			$title = $result[0]['title'];
-			$meta_description = $result[0]['meta_description'];
-			$meta_keywords = $result[0]['meta_keywords'];
-			$edit_content = $result[0]['content'];
-			$edit_created = $result[0]['created'];
-			$edit_modified = $result[0]['modified'];
+			$pages['about'][] = ['url' => 'about', 'menu' => 'No pages yet'];
+		
+		}
+		
+		foreach($menu_result as $key => $value)
+		{
+			$categories[$value['category']] = $value['category'];
+			$pages[$value['category']][] = ['url' => $value['url'], 'menu' => htmlentities($value['menu'])];
+		}
+		
+		// Set default page if not specified
+		if(!$page) $page = $pages[$category][0]['url'];
+		
+		// Query content
+		$result = $pageModel->getPage($controller, $category, $page);
+		
+		if($result) 
+		{			
+			$title 				= $result[0]['title'];
+			$meta_description 	= $result[0]['meta_description'];
+			$meta_keywords 		= $result[0]['meta_keywords'];
+			$edit_autoid 		= $result[0]['autoid'];
+			$edit_menu 			= $result[0]['menu'];
+			$edit_content 		= $result[0]['content'];
+			$edit_created 		= $result[0]['created'];
+			$edit_modified 		= $result[0]['modified'];
 		}
 		else
 		{
-			$edit_autoid = $edit_menu = $title = $meta_description = $meta_keywords = $edit_content = $edit_created = $edit_modified = "";
+			$title = "No content yet";
+			$meta_keywords = $meta_description = "";	
+			$view = $pageModel->defaultView;			
 		}
-		$layout = "default";
+		
+		// All of them use layout/default
+		$view = "layout/default";
 	}
+	
+	// Use nicer looking names for the controllers. Used in the header. Should be a separate table.
+	$controller_array = $pageModel->nicerControllerNames;
+	
+	// For the accordion menu
+	$section_index = 0;
 	
 	// Build the page
-	include COMMON."html/header.php";
-	include VIEWS."layout/$layout.php";
-	include COMMON."html/footer.php";
+	include VIEWS."common/header.php";
+	include VIEWS."$view.php";
+	include VIEWS."common/footer.php";
 	
 ?>

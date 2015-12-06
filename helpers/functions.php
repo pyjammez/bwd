@@ -38,4 +38,36 @@
 		}
 	}
 
+	function form_success($string){echo "<div class='form_success'>$string</div>";}
+	function form_failure($string){echo "<div class='form_failure'>$string</div>";}
+	function url_friendly($string) {return strtolower(str_replace(" ", "-", $string));}
+	function className($string){return ucfirst(preg_replace_callback('/[^a-zA-Z](\w)/',function($matches){	return strtoupper($matches[1]);	},$string));}
+	function user_friendly($string) 
+	{	
+		$string = str_replace("-", " ", $string);
+		if(strlen($string)<4){$string = strtoupper($string);}
+		else {$string = ucwords($string);}
+		return $string;	
+	}
+	function showErrors($type = null)
+	{
+		ini_set('display_errors',1);
+		error_reporting(E_ALL);
+	}
+	function showMemoryUsage($type = null)
+	{
+		$mtime = explode(" ", microtime());
+		$Smtime = $mtime[1] + $mtime[0];
+		$start_memory_usage = memory_get_usage();
+	}	
+	function user_friendly_category($string) 
+	{	
+		$strings = explode("-", $string);
+		foreach($strings as $key => $val){
+			if($val != "and"){$strings[$key] = ucfirst($val);}
+		}
+		$string = implode(' ', $strings);
+		return $string;
+	}
+	
 ?>

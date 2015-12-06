@@ -1,49 +1,54 @@
 	
 	<!-- Mobile only -->
-	<span id="content_nav_chosen" onclick="display_section_menu();"><?php echo "$category : ".htmlentities($title); ?></span>
+	<span id="content_nav_chosen" onclick="display_section_menu();"><?php echo ucfirst($category)." : ".htmlentities($title); ?></span>
 	
 	<!-- Categories tab menu-->
 	<section class='top'>
-	
 		<nav>
 		<?php
 		$i=0;
-		if(!$categories){$categories[] = "about";}
 		foreach($categories as $value)
 		{
+			$chosen = "";
+			
 			if($category == $value)
 			{
 				$section_index = $i;
 				$chosen = " class='chosen'";
 			} 
-			else $chosen = "";
+			
 			echo "<li><a href='/$controller/$value' title='' $chosen>".ucfirst($value)."</a></li>\n\t\t";
 			$i++;
-		}	
+		}
+		
 		if(isset($_SESSION['admin']))
 		{
-			if($_SESSION['admin'] == "edit")$mode = "view";else $mode = "edit";
+			$mode = ($_SESSION['admin'] == "edit") ? "view" : "edit";
 			echo "<a id='toggle_mode' href='?admin=$mode'>toggle mode</a>\n";
 		}
 		?>
 		</nav>
-		
 	</section>
 	
 	<!-- Pages menu -->
 	<section class='left'>
-	
 		<nav>
 		<?php
 		$i = 0;
 		foreach($pages[$category] as $value)
 		{
-			if($page == $value['url']){$chosen = " class='chosen'";$view_index=$i;} else {$chosen = "";}
-			echo "<a href='/$controller/$category/{$value['url']}' title='' $chosen>".$value['menu']."</a>\n\t\t";
+			$chosen = "";
+			
+			if($page == $value['url'])
+			{
+				$chosen = " class='chosen'";
+				$view_index = $i;
+			}
+			
+			echo "<a href='/$controller/$category/{$value['url']}' title='' $chosen>{$value['menu']}</a>\n\t\t";
 			$i++;
 		}	
 		?></nav>
-		
 	</section>
 	
 	<!-- Page content --->

@@ -11,7 +11,7 @@
 	<link rel="stylesheet" href="/common/css/default.css" />
 
 	<link href='http://fonts.googleapis.com/css?family=Yellowtail' rel='stylesheet' type='text/css'>
-	<script src="/common/js/jquery-1.8.0.min.js"></script>
+	<script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
 	<script src="//code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
 	<script src="/common/js/js.js"></script>	
 
