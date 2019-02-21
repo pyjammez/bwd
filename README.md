@@ -1,2 +1,2 @@
 # bwd
-custom php cms for basic web development
+A custom php cms for basic web development
